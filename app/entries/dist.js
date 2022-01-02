@@ -50,6 +50,11 @@ H5P.SpeakTheWordsSet = (function (Question) {
     this.questionWrapper = document.createElement('div');
     this.questionWrapper.className = 'h5p-speak-the-words-set';
 
+    // KidsLoop customization to prevent dragging the image on desktop
+    this.questionWrapper.addEventListener('dragstart', function (event) {
+      event.preventDefault();
+    });
+
     params = Util.extend({
       behaviour: {
         enableSolutionsButton: true, // @see {@link https://h5p.org/documentation/developers/contracts#guides-header-8}
