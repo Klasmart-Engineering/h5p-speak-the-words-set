@@ -2,8 +2,8 @@
   "title": "Speak the Words Set",
   "description": "Answer a set of questions using your speech",
   "majorVersion": 1,
-  "minorVersion": 1,
-  "patchVersion": 9,
+  "minorVersion": 2,
+  "patchVersion": 0,
   "runnable": 1,
   "author": "Joubel",
   "license": "MIT",
@@ -31,18 +31,28 @@
       "machineName": "H5PEditor.ShowWhen",
       "majorVersion": 1,
       "minorVersion": 0
+    },
+    {
+      "machineName": "EditorFontKidsLoop",
+      "majorVersion": 1,
+      "minorVersion": 0
     }
   ],
   "preloadedDependencies": [
     {
       "machineName": "H5P.Question",
       "majorVersion": 1,
-      "minorVersion": 4
+      "minorVersion": 5
     },
     {
       "machineName": "FontAwesome",
       "majorVersion": 4,
       "minorVersion": 5
+    },
+    {
+      "machineName": "FontKidsLoop",
+      "majorVersion": 1,
+      "minorVersion": 0
     }
   ]
 }
