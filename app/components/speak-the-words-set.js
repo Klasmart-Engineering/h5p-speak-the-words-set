@@ -26,20 +26,51 @@ export default class SpeakTheWordsSet extends React.Component {
       ? viewState.showingIntro
       : viewState.showingQuestions;
 
-    this.state = {
-      viewState: initialState,
-      showingSolutions: false,
-      answeredSlides: []
-    };
+    /*
+     * Score can only be updated once the component is mounted. When we
+     * start with the results, we need to enforce rerendering on mount.
+     */
+    if (props.previousState && props.previousState.speakTheWordsSet) {
+      if (props.previousState.speakTheWordsSet.viewState === viewState.showingResults) {
+        this.delayShowingResults = true;
+        props.previousState.speakTheWordsSet.viewState = initialState;
+      }
+
+      this.state = props.previousState.speakTheWordsSet;
+    }
+    else {
+      this.state = { viewState: initialState, answeredSlides: [] };
+    }
 
     this.queueFocusQuestion = false;
 
     this.props.parent.eventStore.on('slideAnswered', this.markSlideAsAnswered.bind(this));
-    this.props.parent.eventStore.on('showSolutionScreen', this.showSolutionScreen.bind(this));
+    this.props.parent.eventStore.on('showResultsScreen', this.showResultsScreen.bind(this));
     this.props.parent.eventStore.on('xAPIanswered', this.triggerXAPI.bind(this));
 
     // Allow wrapper to handle Question type contract functions
     props.onInitialized(this);
+  }
+
+  /**
+   * Run whenever the set is mounted.
+   */
+  componentDidMount() {
+    // Check if all questions have been answered
+    if (this.state.answeredSlides.length === this.props.parent.questionInstances.length) {
+      this.props.parent.eventStore.trigger('answeredAll');
+    }
+
+    // Enforce re-rendering
+    if (this.delayShowingResults) {
+      this.delayShowingResults = false;
+      this.setState({ viewState: viewState.showingResults })
+    }
+
+    // Hide retry button that single instances show on showing solutions
+    if (this.state.viewState === viewState.showingSolutions) {
+      this.props.parent.eventStore.trigger('showSolutions', { keepSlide: true });
+    }
   }
 
   /**
@@ -71,9 +102,9 @@ export default class SpeakTheWordsSet extends React.Component {
   /**
    * Shows solution screen.
    */
-  showSolutionScreen() {
+  showResultsScreen() {
     this.setState({
-      viewState: viewState.showingSolutionScreen
+      viewState: viewState.showingResults
     });
   }
 
@@ -84,8 +115,7 @@ export default class SpeakTheWordsSet extends React.Component {
     this.queueFocusQuestion = true;
     this.setState({
       viewState: viewState.showingQuestions,
-      answeredSlides: [],
-      showingSolutions: false
+      answeredSlides: []
     });
     this.props.parent.eventStore.trigger('retrySet');
   }
@@ -96,8 +126,7 @@ export default class SpeakTheWordsSet extends React.Component {
   showSolutions() {
     this.queueFocusQuestion = true;
     this.setState({
-      viewState: viewState.showingQuestions,
-      showingSolutions: true
+      viewState: viewState.showingSolutions
     });
     this.props.parent.eventStore.trigger('showSolutions');
   }
@@ -139,6 +168,17 @@ export default class SpeakTheWordsSet extends React.Component {
    */
   getMaxScore() {
     return this.questionSet.getMaxScore();
+  }
+
+  /**
+   * Get current state.
+   * @return {object} Current state.
+   */
+  getCurrentState() {
+    return {
+      speakTheWordsSet: this.state,
+      questionSet: this.questionSet.getCurrentState()
+    }
   }
 
   /**
@@ -249,7 +289,7 @@ export default class SpeakTheWordsSet extends React.Component {
     }
 
     let solutionScreen = null;
-    if (this.state.viewState === viewState.showingSolutionScreen) {
+    if (this.state.viewState === viewState.showingResults) {
       const currentScore = this.props.parent.questionInstances.reduce((val, question) => {
         return val + question.getScore();
       }, 0);
@@ -259,7 +299,7 @@ export default class SpeakTheWordsSet extends React.Component {
           currentScore={currentScore}
           maxScore={this.props.parent.params.questions.length}
           retry={this.retry.bind(this)}
-          showingSolutions={this.state.showingSolutions}
+          showingResults={viewState.showingResults}
           showSolutions={this.showSolutions.bind(this)}
           parent={this.props.parent}
         />
@@ -270,7 +310,11 @@ export default class SpeakTheWordsSet extends React.Component {
       <div>
         {introScreen}
         <QuestionSet
-          showingQuestions={this.state.viewState === viewState.showingQuestions}
+          showingQuestions={
+            this.state.viewState === viewState.showingQuestions ||
+            this.state.viewState === viewState.showingSolutions
+          }
+          previousState={this.props.previousState.questionSet}
           answeredSlides={this.state.answeredSlides}
           parent={this.props.parent}
           onInitialized={this.handleInitialized.bind(this)}
@@ -286,10 +330,12 @@ export default class SpeakTheWordsSet extends React.Component {
  * @typedef {Object} ViewStates
  * @property {number} showingIntro Showing introduction screen
  * @property {number} showingQuestions Showing one of the questions in the set
- * @property {number} showingSolutionScreen Showing solution screen
+ * @property {number} showingResults Showing results screen.
+ * @property {number} showingSolutions Showing solutions
  */
 const viewState = {
   showingIntro: 0,
   showingQuestions: 1,
-  showingSolutionScreen: 2
+  showingResults: 2,
+  showingSolutions: 3
 };

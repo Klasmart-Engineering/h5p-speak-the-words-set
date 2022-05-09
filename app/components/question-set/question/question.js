@@ -26,7 +26,8 @@ export default class Question extends React.Component {
 
     // Initializes instance of question, attached when component is mounted
     this.instance = H5P.newRunnable(props.question, props.parent.contentId, undefined, false, {
-      parent: props.parent
+      parent: props.parent,
+      previousState: props.previousState
     });
     props.parent.questionInstances.push(this.instance);
 
@@ -40,7 +41,7 @@ export default class Question extends React.Component {
 
     if (showFinishButton) {
       this.instance.addButton('finish', 'Finish', () => {
-        this.props.parent.eventStore.trigger('showSolutionScreen');
+        this.props.parent.eventStore.trigger('showResultsScreen');
       }, false);
 
       props.parent.eventStore.on('answeredAll', () => {

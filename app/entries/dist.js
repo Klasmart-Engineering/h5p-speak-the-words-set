@@ -44,9 +44,10 @@ H5P.SpeakTheWordsSet = (function (Question) {
    *
    * @param {Parameters} params
    * @param {number} contentId
+   * @param {object} extras Extras like previous state.
    * @constructor
    */
-  function WrapperClass(params, contentId) {
+  function WrapperClass(params, contentId, extras) {
     this.questionWrapper = document.createElement('div');
     this.questionWrapper.className = 'h5p-speak-the-words-set';
 
@@ -69,6 +70,10 @@ H5P.SpeakTheWordsSet = (function (Question) {
     this.eventStore = new H5P.EventDispatcher();
     this.questionInstances = [];
     this.progressAnnouncers = [];
+
+    this.previousState = (extras && extras.previousState) ?
+      extras.previousState :
+      {};
 
     /**
      * Resize wrapper
@@ -137,6 +142,14 @@ H5P.SpeakTheWordsSet = (function (Question) {
     };
 
     /**
+     * Returns the complete state of question set and sub-content.
+     * @returns {object} current state.
+     */
+    this.getCurrentState = () => {
+      return this.speakTheWordsSet.getCurrentState();
+    };
+
+    /**
      * Get reference to SpeakTheWordsSet object.
      * @param {object} SpeakTheWordsSet object.
      */
@@ -163,6 +176,7 @@ H5P.SpeakTheWordsSet = (function (Question) {
       ReactDOM.render((
         <SpeakTheWordsSet
           parent={this}
+          previousState={this.previousState}
           onInitialized={this.handleInitialized}
         />
       ), this.questionWrapper);

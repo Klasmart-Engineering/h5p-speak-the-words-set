@@ -22,9 +22,9 @@ export default class QuestionSet extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      currentSlide: 0
-    };
+    this.state = (props.previousState && props.previousState.progress) ?
+      { currentSlide: props.previousState.progress } :
+      { currentSlide: 0 };
 
     // Reset slide index when retrying or showing solutions
     props.parent.eventStore.on('retrySet', () => {
@@ -34,15 +34,20 @@ export default class QuestionSet extends React.Component {
       this.scores = {};
     });
 
-    props.parent.eventStore.on('showSolutions', () => {
+    props.parent.eventStore.on('showSolutions', (event) => {
+      const slide = (event && event.data && event.data.keepSlide) ?
+        this.state.currentSlide :
+        0;
+
       this.setState({
-        currentSlide: 0
+        currentSlide: slide
       });
     });
 
     this.queueFocus = false;
     this.questionInstances = [];
     this.scores = {};
+    this.questionInstancesInitialized = 0;
 
     props.onInitialized(this);
   }
@@ -122,6 +127,17 @@ export default class QuestionSet extends React.Component {
   }
 
   /**
+   * Get current state.
+   * @return {object} Current state.
+   */
+  getCurrentState() {
+    return {
+      children: this.questionInstances.map(instance => instance.getCurrentState()),
+      progress: this.state.currentSlide
+    };
+  }
+
+  /**
    * Renders component every time properties or state changes.
    * @returns {XML}
    */
@@ -135,13 +151,21 @@ export default class QuestionSet extends React.Component {
       <div className={classes}>
         {
           this.props.parent.params.questions.map((question, idx) => {
+            const previousState = (
+              this.props.previousState &&
+              Array.isArray(this.props.previousState.children)
+            ) ?
+              this.props.previousState.children[idx] :
+              {};
+
             return (
               // Create questions
               <Question
                 question={question}
                 slideIndex={idx}
                 currentSlideIndex={this.state.currentSlide}
-                showSolutionScreen={this.props.showSolutionScreen}
+                showResultsScreen={this.props.showResultsScreen}
+                previousState={previousState}
                 jumpToSlide={this.jumpToSlide.bind(this)}
                 parent={this.props.parent}
                 key={question.subContentId}
